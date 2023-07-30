@@ -33,6 +33,8 @@ class Vite
      */
     protected static $paths = [
         'hotFile' => '/hot',
+        'build' => '/build',
+        'assets' => '/assets',
     ];
 
     /**
@@ -247,7 +249,7 @@ class Vite
      */
     public static function build($entrypoints, $buildDirectory = null)
     {
-        $entrypoints = collect($entrypoints);
+        $entrypoints = new Collection($entrypoints);
         $buildDirectory ??= static::$buildDirectory;
 
         if (static::isRunningHot()) {
@@ -261,8 +263,8 @@ class Vite
 
         $manifest = static::manifest($buildDirectory);
 
-        $tags = collect();
-        $preloads = collect();
+        $tags = new Collection();
+        $preloads = new Collection();
 
         foreach ($entrypoints as $entrypoint) {
             $chunk = static::chunk($manifest, $entrypoint);
@@ -628,7 +630,7 @@ class Vite
      */
     protected static function assetPath($path, $secure = null)
     {
-        return PublicPath($path);
+        return rtrim(static::$paths['assets'], '/') . '/' . ltrim($path, '/');
     }
 
     /**
@@ -662,7 +664,7 @@ class Vite
      */
     protected static function manifestPath($buildDirectory)
     {
-        return PublicPath($buildDirectory . '/' . static::$manifestFilename, false);
+        return rtrim(static::$paths['build'], '/') . '/' . ltrim($buildDirectory, '/') . '/' . ltrim(static::$manifestFilename, '/');
     }
 
     /**
