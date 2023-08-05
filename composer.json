@@ -30,7 +30,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "illuminate/support": "^10.16"
+    "illuminate/support": "*"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.14"
