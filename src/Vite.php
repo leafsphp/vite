@@ -173,7 +173,7 @@ class Vite
      */
     public static function hotFile()
     {
-        return static::$hotFile ?? static::$paths['hot'];
+        return static::$hotFile ?? static::$paths['hot'] ?? 'hot';
     }
 
     /**
