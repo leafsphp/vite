@@ -173,7 +173,10 @@ class Vite
      */
     public static function hotFile()
     {
-        return static::$hotFile ?? static::$paths['hot'] ?? 'hot';
+        $directory = getcwd();
+        $isMVCApp = is_dir("$directory/app/views") && file_exists("$directory/config/paths.php") && is_dir("$directory/public");
+
+        return static::$hotFile ?? $isMVCApp ? PublicPath('hot', false) : (static::$paths['hot'] ?? 'hot');
     }
 
     /**
