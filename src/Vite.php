@@ -38,20 +38,6 @@ class Vite
     ];
 
     /**
-     * The path to the "hot" file.
-     *
-     * @var string|null
-     */
-    protected static $hotFile;
-
-    /**
-     * The path to the build directory.
-     *
-     * @var string
-     */
-    protected static $buildDirectory = 'build';
-
-    /**
      * The name of the manifest file.
      *
      * @var string
@@ -173,30 +159,7 @@ class Vite
      */
     public static function hotFile()
     {
-        $directory = getcwd();
-        $isMVCApp = is_dir("$directory/app/views") && file_exists("$directory/config/paths.php") && is_dir("$directory/public");
-
-        return static::$hotFile ?? $isMVCApp ? PublicPath('hot', false) : (static::$paths['hot'] ?? 'hot');
-    }
-
-    /**
-     * Set the Vite "hot" file path.
-     *
-     * @param  string  $path
-     */
-    public static function useHotFile($path)
-    {
-        static::$hotFile = $path;
-    }
-
-    /**
-     * Set the Vite build directory.
-     *
-     * @param  string  $path
-     */
-    public static function useBuildDirectory($path)
-    {
-        static::$buildDirectory = $path;
+        return static::$paths['hotFile'] ?? 'hot';
     }
 
     /**
@@ -207,7 +170,9 @@ class Vite
     public static function useScriptTagAttributes($attributes)
     {
         if (!is_callable($attributes)) {
-            $attributes = fn () => $attributes;
+            $attributes = function () use ($attributes) {
+                return $attributes;
+            };
         }
 
         static::$scriptTagAttributesResolvers[] = $attributes;
@@ -221,7 +186,7 @@ class Vite
     public static function useStyleTagAttributes($attributes)
     {
         if (!is_callable($attributes)) {
-            $attributes = fn () => $attributes;
+            $attributes = fn() => $attributes;
         }
 
         static::$styleTagAttributesResolvers[] = $attributes;
@@ -235,7 +200,7 @@ class Vite
     public static function usePreloadTagAttributes($attributes)
     {
         if (!is_callable($attributes)) {
-            $attributes = fn () => $attributes;
+            $attributes = fn() => $attributes;
         }
 
         static::$preloadTagAttributesResolvers[] = $attributes;
@@ -253,13 +218,15 @@ class Vite
     public static function build($entrypoints, $buildDirectory = null)
     {
         $entrypoints = new Collection($entrypoints);
-        $buildDirectory ??= static::$buildDirectory;
+        $buildDirectory ??= static::$paths['build'];
 
         if (static::isRunningHot()) {
             return new HtmlString(
                 $entrypoints
                     ->prepend('@vite/client')
-                    ->map(fn ($entrypoint) => static::makeTagForChunk($entrypoint, static::hotAsset($entrypoint), null, null))
+                    ->map(function ($entrypoint) {
+                        return static::makeTagForChunk($entrypoint, static::hotAsset($entrypoint), null, null);
+                    })
                     ->join('')
             );
         }
@@ -332,11 +299,11 @@ class Vite
             }
         }
 
-        [$stylesheets, $scripts] = $tags->unique()->partition(fn ($tag) => str_starts_with($tag, '<link'));
+        [$stylesheets, $scripts] = $tags->unique()->partition(fn($tag) => str_starts_with($tag, '<link'));
 
         $preloads = $preloads->unique()
-            ->sortByDesc(fn ($args) => static::isCssPath($args[1]))
-            ->map(fn ($args) => static::makePreloadTagForChunk(...$args));
+            ->sortByDesc(fn($args) => static::isCssPath($args[1]))
+            ->map(fn($args) => static::makePreloadTagForChunk(...$args));
 
         return new HtmlString($preloads->join('') . $stylesheets->join('') . $scripts->join(''));
     }
@@ -555,9 +522,9 @@ class Vite
     protected static function parseAttributes($attributes)
     {
         return Collection::make($attributes)
-            ->reject(fn ($value, $key) => in_array($value, [false, null], true))
-            ->flatMap(fn ($value, $key) => $value === true ? [$key] : [$key => $value])
-            ->map(fn ($value, $key) => is_int($key) ? $value : $key . '="' . $value . '"')
+            ->reject(fn($value, $key) => in_array($value, [false, null], true))
+            ->flatMap(fn($value, $key) => $value === true ? [$key] : [$key => $value])
+            ->map(fn($value, $key) => is_int($key) ? $value : $key . '="' . $value . '"')
             ->values()
             ->all();
     }
@@ -613,7 +580,7 @@ class Vite
      */
     public static function asset($asset, $buildDirectory = null)
     {
-        $buildDirectory ??= static::$buildDirectory;
+        $buildDirectory ??= static::$paths['build'];
 
         if (static::isRunningHot()) {
             return static::hotAsset($asset);
@@ -678,7 +645,7 @@ class Vite
      */
     public static function manifestHash($buildDirectory = null)
     {
-        $buildDirectory ??= static::$buildDirectory;
+        $buildDirectory ??= static::$paths['build'];
 
         if (static::isRunningHot()) {
             return null;
