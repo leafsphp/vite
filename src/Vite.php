@@ -634,7 +634,7 @@ class Vite
      */
     protected static function manifestPath($buildDirectory)
     {
-        return rtrim(static::$paths['build'], '/') . '/' . ltrim($buildDirectory, '/') . '/' . ltrim(static::$manifestFilename, '/');
+        return trim($buildDirectory, '/') . '/' . ltrim(static::$manifestFilename, '/');
     }
 
     /**
