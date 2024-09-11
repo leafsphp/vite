@@ -241,15 +241,16 @@ class Vite
 
             $preloads->push([
                 $chunk['src'],
-                static::assetPath("{$buildDirectory}/{$chunk['file']}"),
+                static::assetPath($chunk['file']),
                 $chunk,
                 $manifest,
             ]);
 
+
             foreach ($chunk['imports'] ?? [] as $import) {
                 $preloads->push([
                     $import,
-                    static::assetPath("{$buildDirectory}/{$manifest[$import]['file']}"),
+                    static::assetPath($manifest[$import]['file']),
                     $manifest[$import],
                     $manifest,
                 ]);
@@ -259,14 +260,14 @@ class Vite
 
                     $preloads->push([
                         $partialManifest->keys()->first(),
-                        static::assetPath("{$buildDirectory}/{$css}"),
+                        static::assetPath($css),
                         $partialManifest->first(),
                         $manifest,
                     ]);
 
                     $tags->push(static::makeTagForChunk(
                         $partialManifest->keys()->first(),
-                        static::assetPath("{$buildDirectory}/{$css}"),
+                        static::assetPath($css),
                         $partialManifest->first(),
                         $manifest
                     ));
@@ -275,7 +276,7 @@ class Vite
 
             $tags->push(static::makeTagForChunk(
                 $entrypoint,
-                static::assetPath("{$buildDirectory}/{$chunk['file']}"),
+                static::assetPath($chunk['file']),
                 $chunk,
                 $manifest
             ));
@@ -283,16 +284,17 @@ class Vite
             foreach ($chunk['css'] ?? [] as $css) {
                 $partialManifest = Collection::make($manifest)->where('file', $css);
 
+
                 $preloads->push([
                     $partialManifest->keys()->first(),
-                    static::assetPath("{$buildDirectory}/{$css}"),
+                    static::assetPath($css),
                     $partialManifest->first(),
                     $manifest,
                 ]);
 
                 $tags->push(static::makeTagForChunk(
                     $partialManifest->keys()->first(),
-                    static::assetPath("{$buildDirectory}/{$css}"),
+                    static::assetPath($css),
                     $partialManifest->first(),
                     $manifest
                 ));
@@ -588,7 +590,7 @@ class Vite
 
         $chunk = static::chunk(static::manifest($buildDirectory), $asset);
 
-        return static::assetPath($buildDirectory . '/' . $chunk['file']);
+        return static::assetPath($chunk['file']);
     }
 
     /**
