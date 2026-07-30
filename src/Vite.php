@@ -186,7 +186,7 @@ class Vite
     public static function useStyleTagAttributes($attributes)
     {
         if (!is_callable($attributes)) {
-            $attributes = fn() => $attributes;
+            $attributes = fn () => $attributes;
         }
 
         static::$styleTagAttributesResolvers[] = $attributes;
@@ -200,7 +200,7 @@ class Vite
     public static function usePreloadTagAttributes($attributes)
     {
         if (!is_callable($attributes)) {
-            $attributes = fn() => $attributes;
+            $attributes = fn () => $attributes;
         }
 
         static::$preloadTagAttributesResolvers[] = $attributes;
@@ -301,11 +301,11 @@ class Vite
             }
         }
 
-        [$stylesheets, $scripts] = $tags->unique()->partition(fn($tag) => str_starts_with($tag, '<link'));
+        [$stylesheets, $scripts] = $tags->unique()->partition(fn ($tag) => str_starts_with($tag, '<link'));
 
         $preloads = $preloads->unique()
-            ->sortByDesc(fn($args) => static::isCssPath($args[1]))
-            ->map(fn($args) => static::makePreloadTagForChunk(...$args));
+            ->sortByDesc(fn ($args) => static::isCssPath($args[1]))
+            ->map(fn ($args) => static::makePreloadTagForChunk(...$args));
 
         return new HtmlString($preloads->join('') . $stylesheets->join('') . $scripts->join(''));
     }
@@ -524,9 +524,9 @@ class Vite
     protected static function parseAttributes($attributes)
     {
         return Collection::make($attributes)
-            ->reject(fn($value, $key) => in_array($value, [false, null], true))
-            ->flatMap(fn($value, $key) => $value === true ? [$key] : [$key => $value])
-            ->map(fn($value, $key) => is_int($key) ? $value : $key . '="' . $value . '"')
+            ->reject(fn ($value, $key) => in_array($value, [false, null], true))
+            ->flatMap(fn ($value, $key) => $value === true ? [$key] : [$key => $value])
+            ->map(fn ($value, $key) => is_int($key) ? $value : $key . '="' . $value . '"')
             ->values()
             ->all();
     }
