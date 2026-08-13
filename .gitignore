@@ -17,3 +17,4 @@ Thumbs.db
 
 # leaf
 .alchemy
+.phpunit.result.cache
