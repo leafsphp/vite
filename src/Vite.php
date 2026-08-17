@@ -32,9 +32,9 @@ class Vite
      * @var array
      */
     protected static $paths = [
-        'hotFile' => '/hot',
-        'build' => '/build',
-        'assets' => '/assets',
+        'hotFile' => 'hot',
+        'build' => 'build',
+        'assets' => '/build',
     ];
 
     /**

@@ -208,3 +208,35 @@ test('the vite() helper prefixes entrypoints with the configured views path', fu
         ->toContain('src="http://localhost:5173/app/views/a.js"')
         ->toContain('src="http://localhost:5173/app/views/b.js"');
 });
+
+test('default paths are cwd-relative so lite apps work unconfigured', function () {
+    // '/hot' and '/build' resolved from the disk root, so hot mode could
+    // never activate in a lite app — MVC always overrides these at boot
+    $defaults = (new ReflectionClass(Vite::class))->getDefaultProperties()['paths'];
+
+    expect($defaults['hotFile'])->toBe('hot')
+        ->and($defaults['build'])->toBe('build')
+        ->and($defaults['assets'])->toStartWith('/'); // a URL prefix, not a file path
+});
+
+test('per-page inertia entries resolve from dynamic manifest chunks', function () {
+    // production inertia templates request @vite(['app.js', 'pages/welcome.jsx']):
+    // only app.js is a build INPUT — pages land in the manifest as dynamic
+    // chunks via import.meta.glob, and build() must find them there
+    manifest([
+        'app.js' => [
+            'src' => 'app.js',
+            'file' => 'assets/app.abc123.js',
+        ],
+        'pages/welcome.jsx' => [
+            'src' => 'pages/welcome.jsx',
+            'file' => 'assets/welcome.xyz789.js',
+            'isDynamicEntry' => true,
+        ],
+    ]);
+
+    $html = (string) Vite::build(['app.js', 'pages/welcome.jsx']);
+
+    expect($html)->toContain('assets/app.abc123.js')
+        ->and($html)->toContain('assets/welcome.xyz789.js');
+});
