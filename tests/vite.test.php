@@ -14,7 +14,7 @@ const APP_JS_MANIFEST = [
     ],
 ];
 
-test('isRunningHot reflects the presence of the hot file', function () {
+test('isRunningHot requires the hot file AND a live dev server', function () {
     expect(Vite::isRunningHot())->toBeFalse();
 
     hotServer();
@@ -22,14 +22,33 @@ test('isRunningHot reflects the presence of the hot file', function () {
     expect(Vite::isRunningHot())->toBeTrue();
 });
 
+test('a stale hot file falls back to the manifest with a warning instead of dead tags', function () {
+    staleHotServer();
+    manifest(APP_JS_MANIFEST);
+
+    $notices = [];
+    set_error_handler(function ($no, $msg) use (&$notices) {
+        $notices[] = $msg;
+        return true;
+    }, E_USER_NOTICE);
+
+    $isHot = Vite::isRunningHot();
+    $html = (string) Vite::build('app.js');
+    restore_error_handler();
+
+    expect($isHot)->toBeFalse()
+        ->and($html)->toContain('app.abc123.js')
+        ->and(implode(' ', $notices))->toContain('no dev server is answering');
+});
+
 test('build in hot mode points tags at the dev server with the vite client', function () {
-    hotServer('http://localhost:5173');
+    $url = hotServer();
 
     $html = (string) Vite::build('app.js');
 
     expect($html)
-        ->toContain('<script type="module" src="http://localhost:5173/@vite/client"></script>')
-        ->toContain('<script type="module" src="http://localhost:5173/app.js"></script>');
+        ->toContain('<script type="module" src="' . $url . '/@vite/client"></script>')
+        ->toContain('<script type="module" src="' . $url . '/app.js"></script>');
 });
 
 test('build renders script, stylesheet and preload tags from the manifest', function () {
@@ -81,9 +100,9 @@ test('asset returns the hashed path from the manifest', function () {
 });
 
 test('asset points at the dev server in hot mode', function () {
-    hotServer('http://localhost:5173');
+    $url = hotServer();
 
-    expect(Vite::asset('app.js'))->toBe('http://localhost:5173/app.js');
+    expect(Vite::asset('app.js'))->toBe($url . '/app.js');
 });
 
 test('config overrides paths individually or as an array', function () {
@@ -191,22 +210,22 @@ test('manifestHash fingerprints the manifest file', function () {
 test('reactRefresh outputs the preamble only in hot mode', function () {
     expect(Vite::reactRefresh())->toBeNull();
 
-    hotServer('http://localhost:5173');
+    $url = hotServer();
 
     expect((string) Vite::reactRefresh())
-        ->toContain('http://localhost:5173/@react-refresh')
+        ->toContain($url . '/@react-refresh')
         ->toContain('__vite_plugin_react_preamble_installed__');
 });
 
 test('the vite() helper prefixes entrypoints with the configured views path', function () {
-    hotServer('http://localhost:5173');
+    $url = hotServer();
 
     expect((string) vite('app.js'))
-        ->toContain('src="http://localhost:5173/app/views/app.js"');
+        ->toContain('src="' . $url . '/app/views/app.js"');
 
     expect((string) vite(['a.js', 'app/views/b.js'], 'app/views'))
-        ->toContain('src="http://localhost:5173/app/views/a.js"')
-        ->toContain('src="http://localhost:5173/app/views/b.js"');
+        ->toContain('src="' . $url . '/app/views/a.js"')
+        ->toContain('src="' . $url . '/app/views/b.js"');
 });
 
 test('default paths are cwd-relative so lite apps work unconfigured', function () {

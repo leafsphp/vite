@@ -42,6 +42,7 @@ function resetViteState(): void
         'preloadTagAttributesResolvers' => [],
         'preloadedAssets' => [],
         'manifests' => [],
+        'hotServerResponds' => null,
     ];
 
     $reflection = new ReflectionClass(\Leaf\Vite::class);
@@ -65,10 +66,26 @@ function setupViteEnv(): void
     resetViteState();
 }
 
-/** Write a hot file so Vite runs in HMR mode */
-function hotServer(string $url = 'http://localhost:5173'): void
+/**
+ * Write a hot file backed by a real listening socket, so isRunningHot()'s
+ * dev-server probe succeeds. Returns nothing; the socket lives until the
+ * process exits (or closeHotServer() is called).
+ */
+function hotServer(): string
 {
+    $GLOBALS['__hot_socket'] = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+    $url = 'http://' . stream_socket_get_name($GLOBALS['__hot_socket'], false);
+
     file_put_contents(SANDBOX . '/hot', $url);
+
+    return $url;
+}
+
+/** Write a hot file pointing at a dev server that is NOT running */
+function staleHotServer(): void
+{
+    // port 1 on localhost: guaranteed connection-refused without a listener
+    file_put_contents(SANDBOX . '/hot', 'http://127.0.0.1:1');
 }
 
 /** Write a manifest into the sandbox build directory */

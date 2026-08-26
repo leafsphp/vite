@@ -679,12 +679,56 @@ class Vite
     }
 
     /**
+     * Whether the hot file's dev server actually answered (memoized per request).
+     *
+     * @var bool|null
+     */
+    protected static $hotServerResponds;
+
+    /**
      * Determine if the HMR server is running.
+     *
+     * A hot file left behind by a crashed or killed dev server used to make
+     * every page load dead asset URLs with no error. The file alone is no
+     * longer trusted: the dev server must also answer.
      *
      * @return bool
      */
     public static function isRunningHot()
     {
-        return is_file(static::hotFile());
+        if (!is_file(static::hotFile())) {
+            return false;
+        }
+
+        return static::$hotServerResponds ??= static::probeHotServer();
+    }
+
+    /**
+     * Probe the dev server the hot file points at. On failure, warn loudly and
+     * report not-hot so rendering falls back to the build manifest.
+     *
+     * @return bool
+     */
+    protected static function probeHotServer()
+    {
+        $url = rtrim(file_get_contents(static::hotFile()));
+        $parts = parse_url($url) ?: [];
+        $host = $parts['host'] ?? '127.0.0.1';
+        $port = $parts['port'] ?? ((($parts['scheme'] ?? 'http') === 'https') ? 443 : 80);
+
+        $socket = @fsockopen($host, (int) $port, $errno, $errstr, 0.1);
+
+        if ($socket) {
+            fclose($socket);
+
+            return true;
+        }
+
+        trigger_error(
+            "Vite hot file found, but no dev server is answering at {$url}. Falling back to the build manifest. Delete " . static::hotFile() . ' or restart your dev server (`npm run dev` / `leaf serve`).',
+            E_USER_NOTICE
+        );
+
+        return false;
     }
 }
